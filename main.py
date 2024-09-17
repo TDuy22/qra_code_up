@@ -222,7 +222,7 @@ def main(args):
 
     train_corpus_path = os.path.dirname(args.train) + "/corpus.tsv/corpus.txt"
     train_corpus = Corpus([ tuple([train_corpus_path, os.path.dirname(args.train)]) ])
-    valid_corpus_path = os.path.dirname(args.eval) + "/corpus.tsv.gz"
+    valid_corpus_path = os.path.dirname(args.eval) + "/corpus.tsv/corpus.txt"
     valid_corpus = Corpus([ tuple([valid_corpus_path, os.path.dirname(args.eval)]) ])
     say("Corpus loaded.\n")
 
