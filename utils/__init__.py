@@ -469,7 +469,7 @@ class Corpus(object):
         self.data_content = {}
         self.words = {}
         for file_path,key in file_paths:
-            with gzip.open(file_path, 'rt', encoding='utf-8') as fin:
+            with open(file_path, 'r', encoding='utf-8') as fin:
                 for line in fin:
                     parts = line.split('\t')
                     uid, title = parts[0]+key, parts[1]
