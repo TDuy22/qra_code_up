@@ -123,7 +123,9 @@ def evaluate(iter_cnt, filepath, model, corpus, args, logging=True):
     auc_meter = AUCMeter()
     scores = [ np.asarray([], dtype='float32') for i in range(2) ]
     for loader_id, loader in enumerate((neg_batch_loader, pos_batch_loader)):
-        loader = list(loader)
+        print(neg_batch_loader)
+        print(pos_batch_loader)
+        print(type(loader))
         print(loader)
         for data in loader:
             data = map(corpus.get, data)
