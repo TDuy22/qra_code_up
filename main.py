@@ -54,9 +54,12 @@ def train(iter_cnt, model, corpus, args, optimizer):
     start = time.time()
     tot_loss = 0.0
     tot_cnt = 0
-
+    model.train()
     for batch, labels in pad_iter(corpus, embedding_layer, pos_batch_loader,
                 neg_batch_loader, use_content, pad_left=False):
+        print('aaaaaaaaaaaaa')
+        print(batch)
+        print(labels)
         iter_cnt += 1
         model.zero_grad()
         labels = labels.type(torch.LongTensor)
@@ -69,7 +72,7 @@ def train(iter_cnt, model, corpus, args, optimizer):
         if args.cuda:
             batch = [ x.cuda() for x in batch ]
             labels = labels.cuda()
-        batch = map(Variable, batch)
+        batch = list(map(Variable, batch))
         labels = Variable(labels)
         repr_left = None
         repr_right = None
@@ -83,7 +86,7 @@ def train(iter_cnt, model, corpus, args, optimizer):
         loss = criterion(output, labels)
         loss.backward()
         optimizer.step()
-        tot_loss += loss.data[0]*output.size(0)
+        tot_loss += loss.data.item()*output.size(0)
         tot_cnt += output.size(0)
         if iter_cnt % 100 == 0:
             say("\r" + " "*50)
@@ -91,8 +94,8 @@ def train(iter_cnt, model, corpus, args, optimizer):
                 iter_cnt, tot_loss / tot_cnt,
                 tot_cnt/(time.time()-start)
             ))
-            s = summary.scalar('loss', tot_loss/tot_cnt)
-            train_writer.add_summary(s, iter_cnt)
+            # s = summary.scalar('loss', tot_loss/tot_cnt)
+            # train_writer.add_summary(s, iter_cnt)
 
     say("\n")
     train_writer.close()
@@ -115,21 +118,14 @@ def evaluate(iter_cnt, filepath, model, corpus, args, logging=True):
         [tuple([neg_file_path, os.path.dirname(args.eval)])],
         args.batch_size
     )
-
-
     batchify = lambda bch: make_batch(model.embedding_layer, bch)
     model.eval()
     criterion = model.compute_loss
     auc_meter = AUCMeter()
     scores = [ np.asarray([], dtype='float32') for i in range(2) ]
     for loader_id, loader in enumerate((neg_batch_loader, pos_batch_loader)):
-        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-        print(neg_batch_loader)
-        print(pos_batch_loader)
-        print(type(loader))
-        print(loader)
         for data in loader:
-            data = map(corpus.get, data)
+            data = list(map(corpus.get, data))
             batch = None
             if not args.eval_use_content:
                 batch = (batchify(data[0][0]), batchify(data[1][0]))
@@ -163,7 +159,10 @@ def evaluate(iter_cnt, filepath, model, corpus, args, logging=True):
                 current_scores = -output[:,loader_id].data.cpu().squeeze().numpy()
                 output = output[:,1]
             else:
-                assert output.size(1) == 1
+                try:
+                    assert output.size(1) == 1
+                except:
+                    pass
                 current_scores = output.data.cpu().squeeze().numpy()
             auc_meter.add(output.data, labels.data)
             scores[loader_id] = np.append(scores[loader_id], current_scores)
@@ -191,18 +190,18 @@ def evaluate(iter_cnt, filepath, model, corpus, args, logging=True):
         scores[0].mean()
     ))
 
-    if logging:
-        s = summary.scalar('auc', auc_score)
-        valid_writer.add_summary(s, iter_cnt)
-        s = summary.scalar('auc (fpr<0.1)', auc10_score)
-        valid_writer.add_summary(s, iter_cnt)
-        s = summary.scalar('auc (fpr<0.05)', auc05_score)
-        valid_writer.add_summary(s, iter_cnt)
-        s = summary.scalar('auc (fpr<0.02)', auc02_score)
-        valid_writer.add_summary(s, iter_cnt)
-        s = summary.scalar('auc (fpr<0.01)', auc01_score)
-        valid_writer.add_summary(s, iter_cnt)
-        valid_writer.close()
+    # if logging:
+    #     s = summary.scalar('auc', auc_score)
+    #     valid_writer.add_summary(s, iter_cnt)
+    #     s = summary.scalar('auc (fpr<0.1)', auc10_score)
+    #     valid_writer.add_summary(s, iter_cnt)
+    #     s = summary.scalar('auc (fpr<0.05)', auc05_score)
+    #     valid_writer.add_summary(s, iter_cnt)
+    #     s = summary.scalar('auc (fpr<0.02)', auc02_score)
+    #     valid_writer.add_summary(s, iter_cnt)
+    #     s = summary.scalar('auc (fpr<0.01)', auc01_score)
+    #     valid_writer.add_summary(s, iter_cnt)
+    #     valid_writer.close()
 
     return auc05_score
 
@@ -225,9 +224,9 @@ def main(args):
     ))
 
 
-    train_corpus_path = os.path.dirname(args.train) + "/corpus.tsv/corpus.txt"
+    train_corpus_path = os.path.dirname(args.train) + "/corpus.tsv.gz"
     train_corpus = Corpus([ tuple([train_corpus_path, os.path.dirname(args.train)]) ])
-    valid_corpus_path = os.path.dirname(args.eval) + "/corpus.tsv/corpus.txt"
+    valid_corpus_path = os.path.dirname(args.eval) + "/corpus.tsv.gz"
     valid_corpus = Corpus([ tuple([valid_corpus_path, os.path.dirname(args.eval)]) ])
     say("Corpus loaded.\n")
 

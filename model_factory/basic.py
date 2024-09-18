@@ -25,10 +25,7 @@ def indent(text, amount, ch=' '):
 def normalize_2d(x, eps=1e-8):
     assert x.dim() == 2
     vl2 = x.norm(2,1)
-    print (vl2.data.size())
-    print (x.data.size())
-    print (vl2+eps).expand_as(x).data.size()
-    return x/((vl2+eps).expand_as(x))
+    return x/((vl2+eps).unsqueeze(1).expand_as(x))
 
 def cosine_similarity(u, v):
     u2 = normalize_2d(u)
@@ -84,7 +81,7 @@ class ModelBase(nn.Module):
         elif crt == 'classification2':
             return nn.functional.cross_entropy(output, target)
         elif crt == 'cosine':
-            k = target.size(0)/2
+            k = int(target.size(0)/2)
             #print target[0]
             assert target[0] == 1
             assert target[k] == 0
